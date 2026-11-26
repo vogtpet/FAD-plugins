@@ -24,7 +24,7 @@ plugins. Reference version: **pyGuidos 2.6.5**.
 |---|---|---|---|---|
 | QGIS 3 & 4 | [`qgis/`](qgis/) | 1.0.1 | QGIS 3.16+ and QGIS 4 | [FAD-QGIS-1.0.1.zip](https://github.com/vogtpet/FAD-plugins/releases/download/qgis-v1.0.1/FAD-QGIS-1.0.1.zip) |
 | R / RStudio | [`r/`](r/) | 1.0.3 | R ≥ 4.0 (Shiny) | [FAD-R-1.0.3.zip](https://github.com/vogtpet/FAD-plugins/releases/download/r-v1.0.3/FAD-R-1.0.3.zip) |
-| ArcGIS | [`arcgis/`](arcgis/) | 1.0.1 | ArcGIS Pro and Desktop 10.x | [FAD-ArcGIS-1.0.1.zip](https://github.com/vogtpet/FAD-plugins/releases/download/arcgis-v1.0.1/FAD-ArcGIS-1.0.1.zip) |
+| ArcGIS | [`arcgis/`](arcgis/) | 1.0.2 | ArcGIS Pro and Desktop 10.x | [FAD-ArcGIS-1.0.2.zip](https://github.com/vogtpet/FAD-plugins/releases/download/arcgis-v1.0.2/FAD-ArcGIS-1.0.2.zip) |
 
 ## Repository layout
 

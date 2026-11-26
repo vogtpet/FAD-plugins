@@ -32,7 +32,7 @@ from fad_core import compute_fad, compute_statistics
 from fad_stats import read_palette, write_csv, write_histogram, write_report
 from fad_tags import write_tiff_tags
 
-PLUGIN_VERSION = "1.0.1"
+PLUGIN_VERSION = "1.0.2"
 UPDATE_URL = ("https://raw.githubusercontent.com/vogtpet/FAD-plugins/"
               "main/arcgis/VERSION")
 RELEASE_URL = "https://github.com/vogtpet/FAD-plugins/releases/tag/arcgis-v"
@@ -132,8 +132,16 @@ class FAD(object):
         started = time()
 
         input_value = parameters[0].value
-        filepath = parameters[0].valueAsText
-        if not input_value or not filepath:
+        if not input_value:
+            messages.AddErrorMessage("Please select an input image.")
+            sys.exit(0)
+        try:
+            input_desc = arcpy.Describe(input_value)
+            filepath = input_desc.catalogPath or parameters[0].valueAsText
+        except Exception:
+            input_desc = None
+            filepath = parameters[0].valueAsText
+        if not filepath:
             messages.AddErrorMessage("Please select an input image.")
             sys.exit(0)
 
@@ -152,7 +160,7 @@ class FAD(object):
             messages.AddErrorMessage("Please select a valid output folder.")
             sys.exit(0)
 
-        dataset = arcpy.Raster(input_value)
+        dataset = arcpy.Raster(filepath)
         if dataset.bandCount != 1:
             messages.AddErrorMessage(
                 "The image is not a single-band image.")
@@ -163,7 +171,7 @@ class FAD(object):
             sys.exit(0)
 
         read_started = time()
-        array = arcpy.RasterToNumPyArray(input_value)
+        array = arcpy.RasterToNumPyArray(filepath)
         messages.AddMessage("Read input in %.1f s" % (time() - read_started))
         if hasattr(array, "mask"):
             array = array.filled(0)
@@ -188,7 +196,7 @@ class FAD(object):
         out_name = "%s_frag_fad_%d.tif" % (stem, window)
         target = os.path.join(savepath, out_name)
 
-        desc = arcpy.Describe(input_value)
+        desc = input_desc if input_desc is not None else arcpy.Describe(filepath)
         extent = desc.extent
         cell_x = desc.meanCellWidth
         cell_y = desc.meanCellHeight

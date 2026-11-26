@@ -2,6 +2,14 @@
 
 FAD ArcGIS plugin versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-11-26
+
+### Fixed
+
+* A raster layer dragged from the Contents pane is a Layer object; use its
+  `catalogPath` for reading instead of passing the object to `arcpy.Raster`,
+  which raised "expected a raster or layer name".
+
 ## [1.0.1] - 2026-11-26
 
 ### Fixed
