@@ -26,6 +26,14 @@ plugins. Reference version: **pyGuidos 2.6.5**.
 | R / RStudio | [`r/`](r/) | 1.0.3 | R ≥ 4.0 (Shiny) | [FAD-R-1.0.3.zip](https://github.com/vogtpet/FAD-plugins/releases/download/r-v1.0.3/FAD-R-1.0.3.zip) |
 | ArcGIS | [`arcgis/`](arcgis/) | 1.0.4 | ArcGIS Pro and Desktop 10.x | [FAD-ArcGIS-1.0.4.zip](https://github.com/vogtpet/FAD-plugins/releases/download/arcgis-v1.0.4/FAD-ArcGIS-1.0.4.zip) |
 
+
+## Status
+
+All three plugins were tested successfully on x86_64 and aarch64 (macOS,
+Linux and Windows), in QGIS 3/4 and RStudio, and in ArcGIS Pro and ArcGIS
+Desktop 10. ArcGIS statistics, drag/drop input and performance were confirmed
+on the reference sample (about 3 s total in 1.0.4).
+
 ## Repository layout
 
 ```
