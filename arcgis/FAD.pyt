@@ -16,6 +16,7 @@
 import os
 import sys
 import tempfile
+import threading
 from time import strftime, time
 
 try:
@@ -39,7 +40,7 @@ from fad_core import compute_fad, compute_statistics
 from fad_stats import read_palette, write_csv, write_histogram, write_report
 from fad_tags import write_tiff_tags
 
-PLUGIN_VERSION = "1.0.3"
+PLUGIN_VERSION = "1.0.4"
 UPDATE_URL = ("https://raw.githubusercontent.com/vogtpet/FAD-plugins/"
               "main/arcgis/VERSION")
 RELEASE_URL = "https://github.com/vogtpet/FAD-plugins/releases/tag/arcgis-v"
@@ -53,19 +54,29 @@ def version_tuple(value):
         return ()
 
 
-def check_for_update(messages):
+def _fetch_latest_version(result):
     try:
         response = urlopen(UPDATE_URL, timeout=2)
         data = response.read()
         if not isinstance(data, str):
             data = data.decode("utf-8", "ignore")
-        latest = data.strip()
-        if version_tuple(latest) > version_tuple(PLUGIN_VERSION):
-            messages.AddWarningMessage(
-                "A newer FAD ArcGIS plugin (%s) is available: %s%s"
-                % (latest, RELEASE_URL, latest))
+        result["version"] = data.strip()
     except Exception:
         pass
+
+
+def check_for_update(messages):
+    """Check in a daemon thread; never hold up the tool for more than 1 s."""
+    result = {}
+    worker = threading.Thread(target=_fetch_latest_version, args=(result,))
+    worker.daemon = True
+    worker.start()
+    worker.join(1.0)
+    latest = result.get("version")
+    if latest and version_tuple(latest) > version_tuple(PLUGIN_VERSION):
+        messages.AddWarningMessage(
+            "A newer FAD ArcGIS plugin (%s) is available: %s%s"
+            % (latest, RELEASE_URL, latest))
 
 
 def write_clr(path, palette):

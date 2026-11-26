@@ -2,6 +2,14 @@
 
 FAD ArcGIS plugin versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.0.4] - 2026-11-26
+
+### Fixed
+
+* The update check could block the tool for ~8 s in ArcGIS even with a 2 s
+  URL timeout, because proxy/DNS setup ignores it. The check now runs in a
+  daemon thread with a 1 s join; a slow network no longer delays FAD.
+
 ## [1.0.3] - 2026-11-26
 
 ### Fixed
