@@ -1,0 +1,19 @@
+# Build output
+qgis/dist/
+arcgis/dist/
+r/dist/
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+.Renviron
+
+# Operating system
+.DS_Store
+Thumbs.db

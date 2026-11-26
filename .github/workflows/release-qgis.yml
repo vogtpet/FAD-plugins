@@ -1,0 +1,70 @@
+name: Release FAD QGIS
+
+on:
+  push:
+    tags:
+      - "qgis-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: build and publish
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: qgis
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag against VERSION
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          tag="${GITHUB_REF_NAME#qgis-v}"
+          echo "tag=${tag} VERSION=${version}"
+          if [[ -z "${version}" || "${tag}" != "${version}" ]]; then
+            echo "error: tag qgis-v${tag} does not match qgis/VERSION (${version})" >&2
+            exit 1
+          fi
+          grep -q "^version=${version}$" fad/metadata.txt
+
+      - name: Check Python syntax
+        run: |
+          python3 -m py_compile fad/*.py
+          rm -rf fad/__pycache__
+
+      - name: Build the release archive
+        run: ./scripts/build-release.sh
+
+      - name: Prepare release notes
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          {
+            echo "Native FAD implementation for **QGIS 3.16+ and QGIS 4**."
+            echo
+            awk -v ver="${version}" '
+              index($0, "## [" ver "]") == 1 {on=1; next}
+              on && substr($0, 1, 4) == "## [" {exit}
+              on {print}
+            ' CHANGELOG.md
+            echo
+            echo "Install with QGIS: **Plugins → Manage and Install Plugins → Install from ZIP**."
+            echo
+            echo "See [README.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/qgis/README.md) for installation and usage."
+          } > ../release-notes-qgis.md
+          cat ../release-notes-qgis.md
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          gh release create "qgis-v${version}" \
+            "dist/FAD-QGIS-${version}.zip" \
+            "dist/SHA256SUMS" \
+            --title "FAD QGIS ${version}" \
+            --notes-file ../release-notes-qgis.md
