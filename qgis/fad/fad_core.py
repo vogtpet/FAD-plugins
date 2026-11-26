@@ -104,7 +104,7 @@ def compute_statistics(output):
     sum_product = int((np.arange(101) * freq[:101]).sum())
 
     def percent(value):
-        return value / foreground * 100.0 if foreground else 0.0
+        return value / float(foreground) * 100.0 if foreground else 0.0
 
     return {
         "frequency": [int(v) for v in freq[:256]],
@@ -119,8 +119,8 @@ def compute_statistics(output):
         "interior": interior,
         "foreground": foreground,
         "reported": reported,
-        "fad_av": sum_product / foreground if foreground else 0.0,
-        "avcon": sum_product / reported if reported else 0.0,
+        "fad_av": sum_product / float(foreground) if foreground else 0.0,
+        "avcon": sum_product / float(reported) if reported else 0.0,
         "percent": {
             "rare": percent(rare),
             "patchy": percent(patchy),

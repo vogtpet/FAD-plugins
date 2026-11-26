@@ -2,6 +2,19 @@
 
 FAD ArcGIS plugin versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-11-26
+
+### Fixed
+
+* ArcGIS Desktop 10 statistics: Python 2 integer division produced 0.0 % for
+  all classes and integer-rounded FAD_av/AVcon. All divisions now use floats.
+* Removed the pixel-size line from the statistics report.
+
+### Changed
+
+* Disable pyramid and raster-statistics building while writing the output,
+  and report per-stage timings (read, compute, write, palette, total).
+
 ## [1.0.0] - 2026-11-26
 
 ### Added

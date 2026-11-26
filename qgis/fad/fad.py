@@ -24,7 +24,7 @@ from .fad_io import output_path, read_input, write_output
 from .fad_picker import FadPathDialog
 from .fad_stats import read_palette, write_csv, write_report
 
-PLUGIN_VERSION = "1.0.0"
+PLUGIN_VERSION = "1.0.1"
 UPDATE_URL = ("https://raw.githubusercontent.com/vogtpet/FAD-plugins/"
               "main/qgis/VERSION")
 RELEASE_URL = "https://github.com/vogtpet/FAD-plugins/releases/tag/qgis-v"
@@ -225,7 +225,7 @@ class Fad:
             stats = compute_statistics(result)
             stem = os.path.splitext(target)[0]
             write_report(stem + ".txt", stats, filename, target, window,
-                         info["pixel_size"], PLUGIN_VERSION)
+                         PLUGIN_VERSION)
             write_csv(stem + ".csv", stats)
             self.write_histogram(stem + ".png", stats, palette)
 

@@ -16,7 +16,7 @@
 import os
 import sys
 import tempfile
-from time import strftime
+from time import strftime, time
 
 try:
     from urllib.request import urlopen
@@ -32,7 +32,7 @@ from fad_core import compute_fad, compute_statistics
 from fad_stats import read_palette, write_csv, write_histogram, write_report
 from fad_tags import write_tiff_tags
 
-PLUGIN_VERSION = "1.0.0"
+PLUGIN_VERSION = "1.0.1"
 UPDATE_URL = ("https://raw.githubusercontent.com/vogtpet/FAD-plugins/"
               "main/arcgis/VERSION")
 RELEASE_URL = "https://github.com/vogtpet/FAD-plugins/releases/tag/arcgis-v"
@@ -91,10 +91,11 @@ class FAD(object):
 
     def getParameterInfo(self):
         inputRaster = arcpy.Parameter(
-            displayName=("Input image - 0 = missing/nodata, 1 = background, "
-                         "2 = foreground, 3/4 optional"),
+            displayName=("Input raster layer (drag from Contents or browse) - "
+                         "0 = missing/nodata, 1 = background, 2 = foreground, "
+                         "3/4 optional"),
             name="InputImage",
-            datatype="DERasterDataset",
+            datatype="GPRasterLayer",
             parameterType="Required",
             direction="Input")
 
@@ -128,9 +129,11 @@ class FAD(object):
         messages.AddMessage("FAD ArcGIS plugin %s (pyGuidos 2.6.5 reference)"
                             % PLUGIN_VERSION)
         check_for_update(messages)
+        started = time()
 
+        input_value = parameters[0].value
         filepath = parameters[0].valueAsText
-        if not filepath:
+        if not input_value or not filepath:
             messages.AddErrorMessage("Please select an input image.")
             sys.exit(0)
 
@@ -149,7 +152,7 @@ class FAD(object):
             messages.AddErrorMessage("Please select a valid output folder.")
             sys.exit(0)
 
-        dataset = arcpy.Raster(filepath)
+        dataset = arcpy.Raster(input_value)
         if dataset.bandCount != 1:
             messages.AddErrorMessage(
                 "The image is not a single-band image.")
@@ -159,7 +162,9 @@ class FAD(object):
                 "The image is not an 8-bit (Byte) image.")
             sys.exit(0)
 
-        array = arcpy.RasterToNumPyArray(filepath)
+        read_started = time()
+        array = arcpy.RasterToNumPyArray(input_value)
+        messages.AddMessage("Read input in %.1f s" % (time() - read_started))
         if hasattr(array, "mask"):
             array = array.filled(0)
         array = np.asarray(array)
@@ -173,7 +178,9 @@ class FAD(object):
             sys.exit(0)
 
         messages.AddMessage("Computing FAD (window %d) ..." % window)
+        compute_started = time()
         result = compute_fad(array, window)
+        messages.AddMessage("Computed FAD in %.1f s" % (time() - compute_started))
         stats = compute_statistics(result)
         palette = read_palette()
 
@@ -181,7 +188,7 @@ class FAD(object):
         out_name = "%s_frag_fad_%d.tif" % (stem, window)
         target = os.path.join(savepath, out_name)
 
-        desc = arcpy.Describe(filepath)
+        desc = arcpy.Describe(input_value)
         extent = desc.extent
         cell_x = desc.meanCellWidth
         cell_y = desc.meanCellHeight
@@ -196,21 +203,40 @@ class FAD(object):
                     "The existing file could not be replaced: " + str(exc))
                 sys.exit(0)
 
+        write_started = time()
         tmp_raster = arcpy.NumPyArrayToRaster(
             result, arcpy.Point(extent.XMin, extent.YMin), cell_x, cell_y)
         old_srs = arcpy.env.outputCoordinateSystem
+        old_pyramid = arcpy.env.pyramid
+        old_stats = getattr(arcpy.env, "rasterStatistics", None)
         try:
             if spatial_ref and spatial_ref.name != "Unknown":
                 arcpy.env.outputCoordinateSystem = spatial_ref
+            # Avoid building pyramids/statistics during the write; they are
+            # not needed by FAD/GWB and dominate the time on large rasters.
+            arcpy.env.pyramid = "NONE"
+            if old_stats is not None:
+                try:
+                    arcpy.env.rasterStatistics = "NONE"
+                except Exception:
+                    pass
             arcpy.CopyRaster_management(tmp_raster, target)
         finally:
             arcpy.env.outputCoordinateSystem = old_srs
+            arcpy.env.pyramid = old_pyramid
+            if old_stats is not None:
+                try:
+                    arcpy.env.rasterStatistics = old_stats
+                except Exception:
+                    pass
             try:
                 arcpy.Delete_management(tmp_raster)
             except Exception:
                 pass
+        messages.AddMessage("Wrote result in %.1f s" % (time() - write_started))
 
         # Colour table
+        palette_started = time()
         clr = os.path.join(tempfile.mkdtemp(prefix="fad_clr_"), "fad.clr")
         try:
             write_clr(clr, palette)
@@ -218,6 +244,7 @@ class FAD(object):
         except Exception as exc:
             messages.AddWarningMessage(
                 "The FAD palette could not be applied: " + str(exc))
+        messages.AddMessage("Applied palette in %.1f s" % (time() - palette_started))
 
         # Projection (CopyRaster usually assigns it; make sure)
         try:
@@ -245,7 +272,7 @@ class FAD(object):
         stat_stem = os.path.splitext(target)[0]
         try:
             write_report(stat_stem + ".txt", stats, filepath, target, window,
-                         pixel_size, PLUGIN_VERSION)
+                         PLUGIN_VERSION)
             write_csv(stat_stem + ".csv", stats)
             write_histogram(stat_stem + ".png", stats, palette)
         except Exception as exc:
@@ -253,8 +280,8 @@ class FAD(object):
                 "The statistics files could not be written: " + str(exc))
 
         messages.AddMessage(
-            "FAD finished: %s (FAD_av %.6f, AVcon %.6f)"
-            % (target, stats["fad_av"], stats["avcon"]))
+            "FAD finished: %s (FAD_av %.6f, AVcon %.6f, total %.1f s)"
+            % (target, stats["fad_av"], stats["avcon"], time() - started))
 
         try:
             layer = arcpy.MakeRasterLayer_management(

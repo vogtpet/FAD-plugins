@@ -101,7 +101,7 @@ server <- function(input, output, session) {
                          plugin_version)
         out_stem <- tools::file_path_sans_ext(out_tif)
         fad_write_stats(result$stats, out_stem, palette, basename(name), window,
-                        pixel_size, plugin_version)
+                        plugin_version)
         incProgress(0.4, detail = "Done")
       })
 

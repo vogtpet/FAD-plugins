@@ -2,6 +2,13 @@
 
 FAD QGIS plugin versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-11-26
+
+### Changed
+
+* Removed the pixel-size line from the statistics report; it does not affect
+  the statistics.
+
 ## [1.0.0] - 2026-11-26
 
 ### Added

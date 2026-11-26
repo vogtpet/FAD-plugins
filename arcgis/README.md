@@ -8,14 +8,14 @@ the computation uses the numpy that ships with ArcGIS.
 
 | | |
 |---|---|
-| **Plugin version** | 1.0.0 |
+| **Plugin version** | 1.0.1 |
 | **Reference** | pyGuidos 2.6.5 (FAD, binary) |
 | **Host** | ArcGIS Pro and ArcGIS Desktop 10.3–10.9 |
 
 ## Installation
 
-1. Download `FAD-ArcGIS-1.0.0.zip` from the
-   [ArcGIS release](https://github.com/vogtpet/FAD-plugins/releases/tag/arcgis-v1.0.0)
+1. Download `FAD-ArcGIS-1.0.1.zip` from the
+   [ArcGIS release](https://github.com/vogtpet/FAD-plugins/releases/tag/arcgis-v1.0.1)
    and verify it against `SHA256SUMS` if you wish.
 2. Extract the archive to a permanent folder, for example
    `C:\Users\<user>\Documents\ArcGIS\FAD-ArcGIS`.
@@ -32,7 +32,8 @@ If an earlier version is installed, remove the old toolbox entry first.
 Run the **FAD** tool:
 
 * **Input image** – single-band 8-bit TIFF/GeoTIFF with GTB values
-  0 = missing, 1 = background, 2 = foreground, optional 3/4.
+  0 = missing, 1 = background, 2 = foreground, optional 3/4. The parameter
+  accepts a raster layer: drag it from the Contents pane or browse for it.
 * **Window size** – odd number ≥ 3 (default 27).
 * **Output folder**.
 

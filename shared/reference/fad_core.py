@@ -75,7 +75,7 @@ def statistics(output):
     sum_product = int((np.arange(101) * freq[:101]).sum())
 
     def pct(value):
-        return value / foreground * 100.0 if foreground else 0.0
+        return value / float(foreground) * 100.0 if foreground else 0.0
 
     return {
         "background": background,
@@ -89,8 +89,8 @@ def statistics(output):
         "interior": interior,
         "foreground": foreground,
         "reported": reported,
-        "fad_av": sum_product / foreground if foreground else 0.0,
-        "avcon": sum_product / reported if reported else 0.0,
+        "fad_av": sum_product / float(foreground) if foreground else 0.0,
+        "avcon": sum_product / float(reported) if reported else 0.0,
         "class_pct": {
             "rare": pct(rare),
             "patchy": pct(patchy),

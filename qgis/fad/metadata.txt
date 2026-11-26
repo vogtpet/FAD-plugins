@@ -3,7 +3,7 @@ name=FAD
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Foreground Area Density (FAD) fragmentation analysis
-version=1.0.0
+version=1.0.1
 author=Peter Vogt
 email=peter.vogt@ec.europa.eu
 about=Computes Foreground Area Density (FAD) for a binary TIFF/GeoTIFF using the GTB encoding (0=missing, 1=background, 2=foreground, 3/4 optional special background). Writes a GTB-compatible palette TIFF with FAD values 0-100 and the FAD_av, AVcon, class-count and histogram statistics. Native implementation based on pyGuidos 2.6.5 (GPL-3.0-or-later); no pyGuidos installation is required.
@@ -17,4 +17,4 @@ icon=icon.png
 experimental=False
 deprecated=False
 
-changelog=1.0.0: first release. Native FAD, palette output, GTB metadata, statistics (TXT/CSV/PNG), Linux picker, QGIS 3 and 4.
+changelog=1.0.1: remove the pixel-size line from the statistics report. 1.0.0: first release. Native FAD, palette output, GTB metadata, statistics (TXT/CSV/PNG), Linux picker, QGIS 3 and 4.

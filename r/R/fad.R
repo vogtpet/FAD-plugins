@@ -109,7 +109,7 @@ fad_statistics <- function(out) {
 }
 
 fad_write_stats <- function(stats, stem, palette, input_name, window_size,
-                            pixel_size, version) {
+                            version) {
   foreground <- stats$foreground
   proportions <- if (foreground > 0) stats$frequency[1:101] / foreground * 100 else rep(0, 101)
 
@@ -126,10 +126,9 @@ fad_write_stats <- function(stats, stem, palette, input_name, window_size,
     "=============================",
     "",
     paste("Input file      :", input_name),
-    paste("Output file     :", basename(stem), ".tif"),
+    paste0("Output file     : ", basename(stem), ".tif"),
     paste("Plugin version  :", version),
     paste("Window size     :", window_size, "x", window_size, "pixels"),
-    paste("Pixel size      :", pixel_size),
     "Reference       : pyGuidos 2.6.5 FAD (binary)",
     "",
     "Input pixels",

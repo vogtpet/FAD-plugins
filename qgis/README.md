@@ -12,14 +12,14 @@ as pyGuidos, plus statistics.
 
 | | |
 |---|---|
-| **Plugin version** | 1.0.0 |
+| **Plugin version** | 1.0.1 |
 | **Reference** | pyGuidos 2.6.5 (FAD, binary) |
 | **Host** | QGIS 3.16 or newer, and QGIS 4 |
 
 ## Installation
 
-1. Download `FAD-QGIS-1.0.0.zip` from the
-   [QGIS release](https://github.com/vogtpet/FAD-plugins/releases/tag/qgis-v1.0.0).
+1. Download `FAD-QGIS-1.0.1.zip` from the
+   [QGIS release](https://github.com/vogtpet/FAD-plugins/releases/tag/qgis-v1.0.1).
 2. In QGIS open **Plugins → Manage and Install Plugins…**.
 3. Select **Install from ZIP**, choose the file and click **Install Plugin**.
 4. Enable **FAD** in the **Installed** tab.

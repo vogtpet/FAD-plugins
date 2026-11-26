@@ -33,7 +33,7 @@ def write_csv(path, stats):
 
 
 def write_report(path, stats, input_path, output_path, window_size,
-                 pixel_size, version):
+                 version):
     lines = [
         "FAD - Foreground Area Density",
         "=============================",
@@ -42,7 +42,6 @@ def write_report(path, stats, input_path, output_path, window_size,
         "Output file     : " + os.path.basename(output_path),
         "Plugin version  : " + str(version),
         "Window size     : %d x %d pixels" % (window_size, window_size),
-        "Pixel size      : %s" % pixel_size,
         "Reference       : pyGuidos 2.6.5 FAD (binary)",
         "",
         "Input pixels",
