@@ -1,0 +1,90 @@
+name: Release FAD ArcGIS
+
+on:
+  push:
+    tags:
+      - "arcgis-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: build and publish
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: arcgis
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag against VERSION
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          tag="${GITHUB_REF_NAME#arcgis-v}"
+          echo "tag=${tag} VERSION=${version}"
+          if [[ -z "${version}" || "${tag}" != "${version}" ]]; then
+            echo "error: tag arcgis-v${tag} does not match arcgis/VERSION (${version})" >&2
+            exit 1
+          fi
+          grep -q "PLUGIN_VERSION = \"${version}\"" FAD.pyt
+
+      - name: Check Python syntax
+        run: |
+          python3 -m py_compile FAD.pyt fad_core.py fad_stats.py fad_tags.py
+          rm -rf __pycache__
+
+      - name: Install NumPy and Pillow for the fixture check
+        run: |
+          python3 -m pip install --quiet --break-system-packages numpy pillow || \
+            python3 -m pip install --quiet numpy pillow
+
+      - name: Check fixture conformance
+        run: |
+          python3 - <<'PY'
+          import sys
+          import numpy as np
+          from PIL import Image
+          sys.path.insert(0, ".")
+          from fad_core import compute_fad
+          data = np.array(Image.open("../shared/fixtures/input_fad.tif"))
+          for window in (3, 9, 25):
+              expected = np.array(Image.open(
+                  "../shared/fixtures/expected/input_fad_frag_fad_%d.tif" % window))
+              actual = compute_fad(data, window)
+              assert np.array_equal(actual, expected), window
+          print("fixtures OK")
+          PY
+
+      - name: Build the release archive
+        run: ./scripts/build-release.sh
+
+      - name: Prepare release notes
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          {
+            echo "Native FAD implementation for **ArcGIS Pro and Desktop 10.x**."
+            echo
+            awk -v ver="${version}" '
+              index($0, "## [" ver "]") == 1 {on=1; next}
+              on && substr($0, 1, 4) == "## [" {exit}
+              on {print}
+            ' CHANGELOG.md
+            echo
+            echo "See [README.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/arcgis/README.md) for installation and usage."
+          } > ../release-notes-arcgis.md
+          cat ../release-notes-arcgis.md
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          gh release create "arcgis-v${version}" \
+            "dist/FAD-ArcGIS-${version}.zip" \
+            "dist/SHA256SUMS" \
+            --title "FAD ArcGIS ${version}" \
+            --notes-file ../release-notes-arcgis.md

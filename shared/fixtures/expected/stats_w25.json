@@ -1,0 +1,21 @@
+{
+  "input stats": {
+    "backgr3 pxl": 64,
+    "backgr4 pxl": 64,
+    "background pxl": 7061,
+    "foreground pxl": 1967,
+    "missing pxl": 60
+  },
+  "output paths": null,
+  "output stats": {
+    "avcon": 12.266273481869812,
+    "class freq": {
+      "1 rare pxl": 0,
+      "2 patch pxl": 296,
+      "3 trans pxl": 860,
+      "4 domin pxl": 741,
+      "5 inter pxl": 70
+    },
+    "fad_av": 57.09710218607016
+  }
+}

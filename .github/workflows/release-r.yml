@@ -1,0 +1,66 @@
+name: Release FAD R
+
+on:
+  push:
+    tags:
+      - "r-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: build and publish
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: r
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag against VERSION
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          tag="${GITHUB_REF_NAME#r-v}"
+          echo "tag=${tag} VERSION=${version}"
+          if [[ -z "${version}" || "${tag}" != "${version}" ]]; then
+            echo "error: tag r-v${tag} does not match r/VERSION (${version})" >&2
+            exit 1
+          fi
+
+      - name: Check R syntax
+        run: |
+          Rscript -e 'parse("app.R"); parse("R/fad.R")'
+
+      - name: Build the release archive
+        run: ./scripts/build-release.sh
+
+      - name: Prepare release notes
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          {
+            echo "Native FAD implementation for **R/RStudio** (Shiny + terra)."
+            echo
+            awk -v ver="${version}" '
+              index($0, "## [" ver "]") == 1 {on=1; next}
+              on && substr($0, 1, 4) == "## [" {exit}
+              on {print}
+            ' CHANGELOG.md
+            echo
+            echo "See [README.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/r/README.md) for installation and usage."
+          } > ../release-notes-r.md
+          cat ../release-notes-r.md
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          gh release create "r-v${version}" \
+            "dist/FAD-R-${version}.zip" \
+            "dist/SHA256SUMS" \
+            --title "FAD R ${version}" \
+            --notes-file ../release-notes-r.md
