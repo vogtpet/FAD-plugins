@@ -17,7 +17,7 @@ import os
 import sys
 import tempfile
 import threading
-from time import strftime, time
+from time import strftime
 
 try:
     from urllib.request import urlopen
@@ -40,7 +40,7 @@ from fad_core import compute_fad, compute_statistics
 from fad_stats import read_palette, write_csv, write_histogram, write_report
 from fad_tags import write_tiff_tags
 
-PLUGIN_VERSION = "1.0.4"
+PLUGIN_VERSION = "1.0.5"
 UPDATE_URL = ("https://raw.githubusercontent.com/vogtpet/FAD-plugins/"
               "main/arcgis/VERSION")
 RELEASE_URL = "https://github.com/vogtpet/FAD-plugins/releases/tag/arcgis-v"
@@ -132,7 +132,15 @@ class FAD(object):
             parameterType="Required",
             direction="Input")
 
-        return [inputRaster, window, savePath]
+        addToMap = arcpy.Parameter(
+            displayName="Add result to map",
+            name="AddToMap",
+            datatype="GPBoolean",
+            parameterType="Optional",
+            direction="Input")
+        addToMap.value = True
+
+        return [inputRaster, window, savePath, addToMap]
 
     def isLicensed(self):
         return True
@@ -146,10 +154,7 @@ class FAD(object):
     def execute(self, parameters, messages):
         messages.AddMessage("FAD ArcGIS plugin %s (pyGuidos 2.6.5 reference)"
                             % PLUGIN_VERSION)
-        started = time()
-        update_started = time()
         check_for_update(messages)
-        messages.AddMessage("Update check in %.1f s" % (time() - update_started))
 
         input_value = parameters[0].value
         if not input_value:
@@ -175,6 +180,10 @@ class FAD(object):
                 "The window size must be an odd number >= 3.")
             sys.exit(0)
 
+        add_value = parameters[3].value
+        add_to_map = (add_value is True or
+                      str(add_value).strip().lower() in ("true", "1"))
+
         savepath = parameters[2].valueAsText
         if not savepath or not os.path.isdir(savepath):
             messages.AddErrorMessage("Please select a valid output folder.")
@@ -190,9 +199,7 @@ class FAD(object):
                 "The image is not an 8-bit (Byte) image.")
             sys.exit(0)
 
-        read_started = time()
         array = arcpy.RasterToNumPyArray(filepath)
-        messages.AddMessage("Read input in %.1f s" % (time() - read_started))
         if hasattr(array, "mask"):
             array = array.filled(0)
         array = np.asarray(array)
@@ -206,9 +213,7 @@ class FAD(object):
             sys.exit(0)
 
         messages.AddMessage("Computing FAD (window %d) ..." % window)
-        compute_started = time()
         result = compute_fad(array, window)
-        messages.AddMessage("Computed FAD in %.1f s" % (time() - compute_started))
         stats = compute_statistics(result)
         palette = read_palette()
 
@@ -231,7 +236,6 @@ class FAD(object):
                     "The existing file could not be replaced: " + str(exc))
                 sys.exit(0)
 
-        write_started = time()
         tmp_raster = arcpy.NumPyArrayToRaster(
             result, arcpy.Point(extent.XMin, extent.YMin), cell_x, cell_y)
         old_srs = arcpy.env.outputCoordinateSystem
@@ -261,10 +265,7 @@ class FAD(object):
                 arcpy.Delete_management(tmp_raster)
             except Exception:
                 pass
-        messages.AddMessage("Wrote result in %.1f s" % (time() - write_started))
-
         # Colour table
-        palette_started = time()
         clr = os.path.join(tempfile.mkdtemp(prefix="fad_clr_"), "fad.clr")
         try:
             write_clr(clr, palette)
@@ -272,7 +273,6 @@ class FAD(object):
         except Exception as exc:
             messages.AddWarningMessage(
                 "The FAD palette could not be applied: " + str(exc))
-        messages.AddMessage("Applied palette in %.1f s" % (time() - palette_started))
 
         # Projection (CopyRaster usually assigns it; make sure)
         try:
@@ -307,23 +307,22 @@ class FAD(object):
             messages.AddWarningMessage(
                 "The statistics files could not be written: " + str(exc))
 
-        layer_started = time()
-        try:
-            layer = arcpy.MakeRasterLayer_management(
-                target, os.path.splitext(out_name)[0]).getOutput(0)
-            if self.install_info['ProductName'] == 'Desktop':
-                document = arcpy.mapping.MapDocument("CURRENT")
-                dataframe = arcpy.mapping.ListDataFrames(document)[0]
-                arcpy.mapping.AddLayer(dataframe, layer, "TOP")
-            else:
-                project = arcpy.mp.ArcGISProject("current")
-                project.listMaps()[0].addLayer(layer, "TOP")
-            messages.AddMessage("Added layer in %.1f s" % (time() - layer_started))
-        except Exception as exc:
-            messages.AddWarningMessage(
-                "The result was written but could not be added to the map: "
-                + str(exc))
+        if add_to_map:
+            try:
+                layer = arcpy.MakeRasterLayer_management(
+                    target, os.path.splitext(out_name)[0]).getOutput(0)
+                if self.install_info['ProductName'] == 'Desktop':
+                    document = arcpy.mapping.MapDocument("CURRENT")
+                    dataframe = arcpy.mapping.ListDataFrames(document)[0]
+                    arcpy.mapping.AddLayer(dataframe, layer, "TOP")
+                else:
+                    project = arcpy.mp.ArcGISProject("current")
+                    project.listMaps()[0].addLayer(layer, "TOP")
+            except Exception as exc:
+                messages.AddWarningMessage(
+                    "The result was written but could not be added to the map: "
+                    + str(exc))
 
         messages.AddMessage(
-            "FAD finished: %s (FAD_av %.6f, AVcon %.6f, total %.1f s)"
-            % (target, stats["fad_av"], stats["avcon"], time() - started))
+            "FAD finished: %s (FAD_av %.6f, AVcon %.6f)"
+            % (target, stats["fad_av"], stats["avcon"]))

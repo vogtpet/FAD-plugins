@@ -2,6 +2,18 @@
 
 FAD ArcGIS plugin versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.0.5] - 2026-11-26
+
+### Added
+
+* Optional **Add result to map** parameter (default on). When off, no layer
+  is added and no current map is needed.
+
+### Changed
+
+* Removed the diagnostic per-stage timing messages from the tool log; only
+  status, warnings and the final summary are shown.
+
 ## [1.0.4] - 2026-11-26
 
 ### Fixed
