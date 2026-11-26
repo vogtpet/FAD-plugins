@@ -72,16 +72,28 @@ server <- function(input, output, session) {
   state <- reactiveValues(log = "Select an input image and click Run FAD.",
                           stats = NULL, paths = NULL)
 
+  fad_error <- function(message) {
+    message <- as.character(message)
+    state$log <- paste("FAD error:", message)
+    state$stats <- NULL
+    state$paths <- NULL
+    showModal(modalDialog(
+      title = "FAD error",
+      message,
+      easyClose = TRUE,
+      footer = modalButton("Close")))
+  }
+
   observeEvent(input$run, {
     req(input$input)
     window <- as.integer(input$window)
     if (is.na(window) || window < 3L || window %% 2L == 0L) {
-      state$log <- "The window size must be an odd number >= 3."
+      fad_error("The window size must be an odd number >= 3.")
       return()
     }
     outdir <- trimws(input$outdir)
     if (!dir.exists(outdir)) {
-      state$log <- paste("Output folder does not exist:", outdir)
+      fad_error(paste("Output folder does not exist:", outdir))
       return()
     }
 
@@ -89,36 +101,40 @@ server <- function(input, output, session) {
     stem <- tools::file_path_sans_ext(basename(name))
     out_tif <- file.path(outdir, sprintf("%s_frag_fad_%d.tif", stem, window))
 
-    withProgress(message = "Computing FAD...", value = 0, {
-      incProgress(0.1, detail = "Reading input")
-      r <- terra::rast(input$input$datapath)
-      incProgress(0.2, detail = "Moving window")
-      result <- fad_compute(r, window)
-      incProgress(0.5, detail = "Writing result")
-      resolution <- terra::res(result$raster)
-      pixel_size <- if (length(resolution) > 0L) abs(resolution[1]) else 1
-      fad_write_output(result$raster, out_tif, palette, window, pixel_size,
-                       plugin_version)
-      out_stem <- tools::file_path_sans_ext(out_tif)
-      fad_write_stats(result$stats, out_stem, palette, basename(name), window,
-                      pixel_size, plugin_version)
-      incProgress(0.4, detail = "Done")
-    })
+    tryCatch({
+      withProgress(message = "Computing FAD...", value = 0, {
+        incProgress(0.1, detail = "Reading input")
+        r <- terra::rast(input$input$datapath)
+        incProgress(0.2, detail = "Moving window")
+        result <- fad_compute(r, window)
+        incProgress(0.5, detail = "Writing result")
+        resolution <- terra::res(result$raster)
+        pixel_size <- if (length(resolution) > 0L) abs(resolution[1]) else 1
+        fad_write_output(result$raster, out_tif, palette, window, pixel_size,
+                         plugin_version)
+        out_stem <- tools::file_path_sans_ext(out_tif)
+        fad_write_stats(result$stats, out_stem, palette, basename(name), window,
+                        pixel_size, plugin_version)
+        incProgress(0.4, detail = "Done")
+      })
 
-    state$stats <- result$stats
-    state$paths <- c(
-      tif = out_tif,
-      txt = paste0(tools::file_path_sans_ext(out_tif), ".txt"),
-      csv = paste0(tools::file_path_sans_ext(out_tif), ".csv"),
-      png = paste0(tools::file_path_sans_ext(out_tif), ".png")
-    )
-    state$log <- paste(
-      "FAD finished",
-      paste("Window:", window, "x", window),
-      paste("Result:", out_tif),
-      paste("Statistics:", state$paths[["txt"]], state$paths[["csv"]],
-            state$paths[["png"]]),
-      sep = "\n")
+      state$stats <- result$stats
+      state$paths <- c(
+        tif = out_tif,
+        txt = paste0(tools::file_path_sans_ext(out_tif), ".txt"),
+        csv = paste0(tools::file_path_sans_ext(out_tif), ".csv"),
+        png = paste0(tools::file_path_sans_ext(out_tif), ".png")
+      )
+      state$log <- paste(
+        "FAD finished",
+        paste("Window:", window, "x", window),
+        paste("Result:", out_tif),
+        paste("Statistics:", state$paths[["txt"]], state$paths[["csv"]],
+              state$paths[["png"]]),
+        sep = "\n")
+    }, error = function(e) {
+      fad_error(conditionMessage(e))
+    })
   })
 
   output$log <- renderText(state$log)

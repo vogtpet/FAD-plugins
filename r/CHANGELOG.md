@@ -2,6 +2,13 @@
 
 FAD R plugin versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-11-26
+
+### Fixed
+
+* An invalid input image no longer crashes the Shiny app. Validation and
+  processing errors are shown in a modal dialog and the app stays usable.
+
 ## [1.0.0] - 2026-11-26
 
 ### Added
