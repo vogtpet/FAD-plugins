@@ -84,27 +84,14 @@ server <- function(input, output, session) {
       footer = modalButton("Close")))
   }
 
-  observeEvent(input$run, {
-    req(input$input)
-    window <- as.integer(input$window)
-    if (is.na(window) || window < 3L || window %% 2L == 0L) {
-      fad_error("The window size must be an odd number >= 3.")
-      return()
-    }
-    outdir <- trimws(input$outdir)
-    if (!dir.exists(outdir)) {
-      fad_error(paste("Output folder does not exist:", outdir))
-      return()
-    }
+  pending <- reactiveValues(name = NULL, window = NULL, outdir = NULL,
+                            out_tif = NULL, datapath = NULL)
 
-    name <- input$input$name
-    stem <- tools::file_path_sans_ext(basename(name))
-    out_tif <- file.path(outdir, sprintf("%s_frag_fad_%d.tif", stem, window))
-
+  run_processing <- function(name, window, outdir, out_tif, datapath) {
     tryCatch({
       withProgress(message = "Computing FAD...", value = 0, {
         incProgress(0.1, detail = "Reading input")
-        r <- terra::rast(input$input$datapath)
+        r <- terra::rast(datapath)
         incProgress(0.2, detail = "Moving window")
         result <- fad_compute(r, window)
         incProgress(0.5, detail = "Writing result")
@@ -135,6 +122,50 @@ server <- function(input, output, session) {
     }, error = function(e) {
       fad_error(conditionMessage(e))
     })
+  }
+
+  observeEvent(input$run, {
+    req(input$input)
+    window <- as.integer(input$window)
+    if (is.na(window) || window < 3L || window %% 2L == 0L) {
+      fad_error("The window size must be an odd number >= 3.")
+      return()
+    }
+    outdir <- trimws(input$outdir)
+    if (!dir.exists(outdir)) {
+      fad_error(paste("Output folder does not exist:", outdir))
+      return()
+    }
+
+    name <- input$input$name
+    stem <- tools::file_path_sans_ext(basename(name))
+    out_tif <- file.path(outdir, sprintf("%s_frag_fad_%d.tif", stem, window))
+
+    if (file.exists(out_tif)) {
+      pending$name <- name
+      pending$window <- window
+      pending$outdir <- outdir
+      pending$out_tif <- out_tif
+      pending$datapath <- input$input$datapath
+      showModal(modalDialog(
+        title = "Overwrite existing result?",
+        paste0("The result already exists:\n", out_tif,
+               "\n\nOverwrite the raster and its statistics files?"),
+        easyClose = TRUE,
+        footer = tagList(
+          modalButton("Cancel"),
+          actionButton("overwrite_yes", "Overwrite", class = "btn-danger"))))
+      return()
+    }
+
+    run_processing(name, window, outdir, out_tif, input$input$datapath)
+  })
+
+  observeEvent(input$overwrite_yes, {
+    removeModal()
+    req(pending$out_tif)
+    run_processing(pending$name, pending$window, pending$outdir,
+                   pending$out_tif, pending$datapath)
   })
 
   output$log <- renderText(state$log)

@@ -2,6 +2,13 @@
 
 FAD R plugin versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-11-26
+
+### Added
+
+* If the result TIFF already exists, the app asks for confirmation before
+  overwriting the raster and its statistics files.
+
 ## [1.0.1] - 2026-11-26
 
 ### Fixed

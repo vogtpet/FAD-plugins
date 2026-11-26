@@ -8,14 +8,14 @@ FAD is implemented natively with **terra**; pyGuidos is not required.
 
 | | |
 |---|---|
-| **Plugin version** | 1.0.1 |
+| **Plugin version** | 1.0.2 |
 | **Reference** | pyGuidos 2.6.5 (FAD, binary) |
 | **Host** | R ≥ 4.0, RStudio recommended |
 
 ## Installation
 
-1. Download `FAD-R-1.0.1.zip` from the
-   [R release](https://github.com/vogtpet/FAD-plugins/releases/tag/r-v1.0.1).
+1. Download `FAD-R-1.0.2.zip` from the
+   [R release](https://github.com/vogtpet/FAD-plugins/releases/tag/r-v1.0.2).
 2. Extract it. You get a folder `FAD` with `app.R`, `R/`, `VERSION` and this
    README.
 3. Open `app.R` in RStudio and click **Run App**, or run
