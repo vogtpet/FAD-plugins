@@ -8,14 +8,14 @@ the computation uses the numpy that ships with ArcGIS.
 
 | | |
 |---|---|
-| **Plugin version** | 1.0.2 |
+| **Plugin version** | 1.0.3 |
 | **Reference** | pyGuidos 2.6.5 (FAD, binary) |
 | **Host** | ArcGIS Pro and ArcGIS Desktop 10.3–10.9 |
 
 ## Installation
 
-1. Download `FAD-ArcGIS-1.0.2.zip` from the
-   [ArcGIS release](https://github.com/vogtpet/FAD-plugins/releases/tag/arcgis-v1.0.2)
+1. Download `FAD-ArcGIS-1.0.3.zip` from the
+   [ArcGIS release](https://github.com/vogtpet/FAD-plugins/releases/tag/arcgis-v1.0.3)
    and verify it against `SHA256SUMS` if you wish.
 2. Extract the archive to a permanent folder, for example
    `C:\Users\<user>\Documents\ArcGIS\FAD-ArcGIS`.

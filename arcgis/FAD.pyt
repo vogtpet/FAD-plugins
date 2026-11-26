@@ -28,11 +28,18 @@ import arcpy
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+# ArcGIS keeps Python modules in sys.modules for the whole session. When a
+# new plugin version is installed in the same session, the old sibling
+# modules would otherwise stay cached (this caused a stale write_report()
+# signature error). Load the modules from the current plugin folder.
+for _module in ("fad_core", "fad_stats", "fad_tags"):
+    sys.modules.pop(_module, None)
+
 from fad_core import compute_fad, compute_statistics
 from fad_stats import read_palette, write_csv, write_histogram, write_report
 from fad_tags import write_tiff_tags
 
-PLUGIN_VERSION = "1.0.2"
+PLUGIN_VERSION = "1.0.3"
 UPDATE_URL = ("https://raw.githubusercontent.com/vogtpet/FAD-plugins/"
               "main/arcgis/VERSION")
 RELEASE_URL = "https://github.com/vogtpet/FAD-plugins/releases/tag/arcgis-v"
@@ -48,7 +55,7 @@ def version_tuple(value):
 
 def check_for_update(messages):
     try:
-        response = urlopen(UPDATE_URL, timeout=5)
+        response = urlopen(UPDATE_URL, timeout=2)
         data = response.read()
         if not isinstance(data, str):
             data = data.decode("utf-8", "ignore")
@@ -128,8 +135,10 @@ class FAD(object):
     def execute(self, parameters, messages):
         messages.AddMessage("FAD ArcGIS plugin %s (pyGuidos 2.6.5 reference)"
                             % PLUGIN_VERSION)
-        check_for_update(messages)
         started = time()
+        update_started = time()
+        check_for_update(messages)
+        messages.AddMessage("Update check in %.1f s" % (time() - update_started))
 
         input_value = parameters[0].value
         if not input_value:
@@ -287,10 +296,7 @@ class FAD(object):
             messages.AddWarningMessage(
                 "The statistics files could not be written: " + str(exc))
 
-        messages.AddMessage(
-            "FAD finished: %s (FAD_av %.6f, AVcon %.6f, total %.1f s)"
-            % (target, stats["fad_av"], stats["avcon"], time() - started))
-
+        layer_started = time()
         try:
             layer = arcpy.MakeRasterLayer_management(
                 target, os.path.splitext(out_name)[0]).getOutput(0)
@@ -301,7 +307,12 @@ class FAD(object):
             else:
                 project = arcpy.mp.ArcGISProject("current")
                 project.listMaps()[0].addLayer(layer, "TOP")
+            messages.AddMessage("Added layer in %.1f s" % (time() - layer_started))
         except Exception as exc:
             messages.AddWarningMessage(
                 "The result was written but could not be added to the map: "
                 + str(exc))
+
+        messages.AddMessage(
+            "FAD finished: %s (FAD_av %.6f, AVcon %.6f, total %.1f s)"
+            % (target, stats["fad_av"], stats["avcon"], time() - started))

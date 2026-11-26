@@ -2,6 +2,20 @@
 
 FAD ArcGIS plugin versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.0.3] - 2026-11-26
+
+### Fixed
+
+* Reload `fad_core`, `fad_stats` and `fad_tags` from the current plugin
+  folder. ArcGIS keeps them in `sys.modules` for the whole session, so after
+  an in-place upgrade the old `write_report` signature could be called
+  ("missing 1 required positional argument: 'version'").
+
+### Changed
+
+* Time the update check and the automatic layer addition; the total message
+  now includes both. The update-check timeout is 2 s.
+
 ## [1.0.2] - 2026-11-26
 
 ### Fixed
